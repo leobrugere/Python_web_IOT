@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<p align="center" ><font size="+3">{{ det[0][2] }}</font></p> <br>
+
+{% for i in det %}
+
+
+<p align="center">{{ i[0] }} - {{ i[1] }}</p>
+
+{% endfor %}
+
+{% endblock %}

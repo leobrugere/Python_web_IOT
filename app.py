@@ -29,8 +29,9 @@ def get_db () :
 def add():
     if request.method == 'POST':
         url_du_site = request.form.get('url_du_site')
+        nom_site = request.form.get('nom')
         db = get_db()
-        db.execute('INSERT INTO liste_site (lien) VALUES (%(url_du_site)s)', {'url_du_site' : url_du_site})
+        db.execute('INSERT INTO liste_site (lien, nom) VALUES (%(url_du_site)s, %(nom)s)', {'url_du_site' : url_du_site, 'nom' : nom_site})
         g.mysql_connection.commit()
 
     return render_template('add.html')
@@ -38,18 +39,11 @@ def add():
 @app.route('/')
 def index():
     db = get_db()
-    db.execute('SELECT l.id, lien, etats, date FROM etats_site e, liste_site l WHERE e.website_id = l.id AND date = (SELECT MAX(date) from etats_site e2 where e2.website_id = l.id) GROUP BY lien, l.id,e.etats, e.date')
+    db.execute('SELECT l.id, lien, l.nom, etats, date FROM etats_site e, liste_site l WHERE e.website_id = l.id AND date = (SELECT MAX(date) from etats_site e2 where e2.website_id = l.id) GROUP BY lien, l.id, e.etats, l.nom, e.date')
     link = db.fetchall()
 
     return render_template('index.html', link = link)
 
-
-
-@app.route('/details/')
-def details():
-    db = get_db()
-    db.execute('')
-    return render_template('details.html')
 
 @app.route('/login/', methods = ['GET', 'POST'])
 def login () :
@@ -77,7 +71,7 @@ def admin () :
         return redirect(url_for('login'))
 
     db = get_db()
-    db.execute('SELECT l.id, lien, etats, date FROM etats_site e, liste_site l WHERE e.website_id = l.id AND date = (SELECT MAX(date) from etats_site e2 where e2.website_id = l.id) GROUP BY lien, l.id,e.etats, e.date ')
+    db.execute('SELECT l.id, lien, l.nom, etats, date FROM etats_site e, liste_site l WHERE e.website_id = l.id AND date = (SELECT MAX(date) from etats_site e2 where e2.website_id = l.id) GROUP BY lien, l.id, e.etats, l.nom, e.date')
     link = db.fetchall()
 
     return render_template('admin.html', user = session['user'], link = link)
@@ -86,6 +80,23 @@ def admin () :
 def admin_logout () :
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/details/<int:id>')
+def details(id):
+
+    db = get_db()
+    db.execute('SELECT etats, date, nom FROM etats_site e JOIN liste_site l ON (e.website_id = l.id) WHERE website_id = %(id)s', {'id' : id})
+    det = db.fetchall()
+
+    return render_template('details.html', det = det)
+
+@app.route('/supprimer/<int:id>/')
+def supprimer(id):
+    db = get_db()
+    db.execute('DELETE FROM liste_site WHERE id = %(id)s', {'id' : id})
+    g.mysql_connection.commit()
+
+    return redirect(url_for('admin'))
 
 
 
